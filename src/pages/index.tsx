@@ -1,4 +1,4 @@
-import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
+import { DragDropContext, Draggable, Droppable, OnDragEndResponder } from '@hello-pangea/dnd'
 import type {
   ClassAttributes,
   HTMLAttributes,
@@ -58,10 +58,7 @@ const Index = () => {
     { id: 'item-2', content: 'task 3' },
   ])
 
-  const onDragEnd = (result: {
-    destination: { index: number }
-    source: { index: number }
-  }) => {
+  const onDragEnd: OnDragEndResponder = (result) => {
     // dropped outside the list
     if (!result.destination) {
       return
@@ -92,24 +89,7 @@ const Index = () => {
           <div>
             <DragDropContext onDragEnd={onDragEnd}>
               <Droppable droppableId="droppable">
-                {(
-                  provided: {
-                    droppableProps: JSX.IntrinsicAttributes &
-                      ClassAttributes<HTMLDivElement> &
-                      HTMLAttributes<HTMLDivElement>
-                    innerRef: LegacyRef<HTMLDivElement> | undefined
-                    placeholder:
-                      | string
-                      | number
-                      | boolean
-                      | ReactElement<any, string | JSXElementConstructor<any>>
-                      | ReactFragment
-                      | ReactPortal
-                      | null
-                      | undefined
-                  },
-                  snapshot: { isDraggingOver: any }
-                ) => (
+                {(provided, snapshot) => (
                   <Container
                     {...provided.droppableProps}
                     ref={provided.innerRef}
@@ -121,18 +101,7 @@ const Index = () => {
                         draggableId={item.id}
                         index={index}
                       >
-                        {(
-                          provided2: {
-                            innerRef: LegacyRef<HTMLDivElement> | undefined
-                            draggableProps: JSX.IntrinsicAttributes &
-                              ClassAttributes<HTMLDivElement> &
-                              HTMLAttributes<HTMLDivElement>
-                            dragHandleProps: JSX.IntrinsicAttributes &
-                              ClassAttributes<HTMLDivElement> &
-                              HTMLAttributes<HTMLDivElement>
-                          },
-                          snapshot2: { isDragging: any }
-                        ) => (
+                        {(provided2, snapshot2) => (
                           <Container
                             ref={provided2.innerRef}
                             {...provided2.draggableProps}
