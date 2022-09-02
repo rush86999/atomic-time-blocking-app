@@ -1,12 +1,4 @@
-import { useRouter } from 'next/router'
-
-import { Meta } from '@/layouts/Meta'
-import { Main } from '@/templates/Main'
-import dayjs from 'dayjs'
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
-import styled from 'styled-components'
-
-import {
+import type {
   ClassAttributes,
   HTMLAttributes,
   JSXElementConstructor,
@@ -14,10 +6,13 @@ import {
   ReactElement,
   ReactFragment,
   ReactPortal,
-  useEffect,
-  useState
 } from 'react'
+import { useState } from 'react'
+import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd'
+import styled from 'styled-components'
 
+import { Meta } from '@/layouts/Meta'
+import { Main } from '@/templates/Main'
 
 // a little function to help us with reordering the result
 const reorder = (list: ItemType[], startIndex: number, endIndex: number) => {
@@ -60,11 +55,9 @@ const Index = () => {
   const [items, setItems] = useState<ItemType[]>([
     { id: 'item-0', content: 'task 1' },
     { id: 'item-1', content: 'task 2' },
-    { id: 'item-2', content: 'task 3'},
+    { id: 'item-2', content: 'task 3' },
   ])
 
-  
-  
   const onDragEnd = (result: {
     destination: { index: number }
     source: { index: number }
@@ -82,7 +75,6 @@ const Index = () => {
 
     setItems(newItems)
   }
-
 
   return (
     <Main
@@ -122,7 +114,6 @@ const Index = () => {
                     {...provided.droppableProps}
                     ref={provided.innerRef}
                     style={getListStyle(snapshot.isDraggingOver)}
-                    
                   >
                     {items.map((item, index) => (
                       <Draggable
@@ -153,9 +144,7 @@ const Index = () => {
                             className="relative text-center"
                           >
                             {item.content}
-                            <div className="absolute top-0 right-2">
-                              x
-                            </div>
+                            <div className="absolute top-0 right-2">x</div>
                           </Container>
                         )}
                       </Draggable>
@@ -169,13 +158,11 @@ const Index = () => {
         </div>
         <div className="basis-1/2">
           <h2 className="text-center">Today&apos;s Agenda</h2>
-          <div>
-
-          </div>
+          <div></div>
         </div>
       </div>
     </Main>
   )
 }
 
-export default Index;
+export default Index
