@@ -1,6 +1,6 @@
 export const AppConfig = {
   site_name: 'Starter',
-  title: 'Nextjs Starter',
-  description: 'Starter code for your Nextjs Boilerplate with Tailwind CSS',
+  title: 'Atomic Time Blocking',
+  description: 'Time blocking in your browser',
   locale: 'en',
 };

@@ -39,7 +39,7 @@ const Main = (props: IMainProps) => (
             <li className="mr-6">
               <a
                 className="border-none text-gray-700 hover:text-gray-900"
-                href="https://github.com/ixartz/Next-js-Boilerplate"
+                href="https://github.com/rush86999/atomic-time-blocking-app"
               >
                 GitHub
               </a>
@@ -51,11 +51,11 @@ const Main = (props: IMainProps) => (
       <div className="content py-5 text-xl">{props.children}</div>
 
       <div className="border-t border-gray-300 py-8 text-center text-sm">
-        © Copyright {new Date().getFullYear()} {AppConfig.title}. Powered with{' '}
+        © Copyright {new Date().getFullYear()} {AppConfig.title}. Made with{' '}
         <span role="img" aria-label="Love">
           ♥
         </span>{' '}
-        by <a href="https://creativedesignsguru.com">CreativeDesignsGuru</a>
+        by <a href="https://atomiclife.app">Atomic</a>
         {/*
          * PLEASE READ THIS SECTION
          * We'll really appreciate if you could have a link to our website
