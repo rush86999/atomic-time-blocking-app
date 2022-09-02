@@ -1,13 +1,5 @@
-import { DragDropContext, Draggable, Droppable, OnDragEndResponder } from '@hello-pangea/dnd'
-import type {
-  ClassAttributes,
-  HTMLAttributes,
-  JSXElementConstructor,
-  LegacyRef,
-  ReactElement,
-  ReactFragment,
-  ReactPortal,
-} from 'react'
+import type { OnDragEndResponder } from '@hello-pangea/dnd'
+import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
 import { useState } from 'react'
 import styled from 'styled-components'
 
