@@ -18,6 +18,7 @@
     "e2e:headless": "start-server-and-test dev http://localhost:3000 cypress:headless"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^16.0.0",
     "dayjs": "^1.11.5",
     "next": "^12.2.5",
     "next-seo": "^5.5.0",

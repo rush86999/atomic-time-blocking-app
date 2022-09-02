@@ -1,3 +1,4 @@
+import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
 import type {
   ClassAttributes,
   HTMLAttributes,
@@ -8,7 +9,6 @@ import type {
   ReactPortal,
 } from 'react'
 import { useState } from 'react'
-import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd'
 import styled from 'styled-components'
 
 import { Meta } from '@/layouts/Meta'
