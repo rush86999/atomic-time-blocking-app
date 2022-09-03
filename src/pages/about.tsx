@@ -1,5 +1,5 @@
-import { Meta } from '@/layouts/Meta';
-import { Main } from '@/templates/Main';
+import { Meta } from '@/layouts/Meta'
+import { Main } from '@/templates/Main'
 
 const About = () => (
   <Main meta={<Meta title="Lorem ipsum" description="Lorem ipsum" />}>
@@ -16,6 +16,6 @@ const About = () => (
       placeat, accusamus aut saepe.
     </p>
   </Main>
-);
+)
 
-export default About;
+export default About

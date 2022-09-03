@@ -2,18 +2,8 @@
   // Configuration for JavaScript files
   "extends": [
     "airbnb-base",
-    "next/core-web-vitals", // Needed to avoid warning in next.js build: 'The Next.js plugin was not detected in your ESLint configuration'
-    "plugin:prettier/recommended"
+    "next/core-web-vitals" // Needed to avoid warning in next.js build: 'The Next.js plugin was not detected in your ESLint configuration'
   ],
-  "rules": {
-    "prettier/prettier": [
-      "error",
-      {
-        "singleQuote": true,
-        "endOfLine": "auto"
-      }
-    ]
-  },
   "overrides": [
     // Configuration for TypeScript files
     {
@@ -27,21 +17,14 @@
       "extends": [
         "plugin:tailwindcss/recommended",
         "airbnb-typescript",
-        "next/core-web-vitals",
-        "plugin:prettier/recommended"
+        "next/core-web-vitals"
       ],
       "parserOptions": {
         "project": "./tsconfig.json"
       },
       "rules": {
-        "prettier/prettier": [
-          "error",
-          {
-            "singleQuote": true,
-            "semi": false,
-            "endOfLine": "auto"
-          }
-        ],
+        "semi": "off",
+         "@typescript-eslint/semi": "off",
         "react/destructuring-assignment": "off", // Vscode doesn't support automatically destructuring, it's a pain to add a new variable
         "jsx-a11y/anchor-is-valid": "off", // Next.js use his own internal link system
         "react/require-default-props": "off", // Allow non-defined react props as undefined

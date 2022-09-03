@@ -42,5 +42,5 @@
     }
   },
   "exclude": ["./out/**/*", "./node_modules/**/*", "**/*.cy.ts"],
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "jest.config.js", "commitlint.config.js", "cypress.config.js", "next.config.js", "tailwind.config.js"]
 }
