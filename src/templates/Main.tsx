@@ -1,7 +1,7 @@
-import Link from 'next/link';
-import type { ReactNode } from 'react';
-
-import { AppConfig } from '@/utils/AppConfig';
+import Link from 'next/link'
+import type { ReactNode } from 'react'
+import { Toaster } from 'react-hot-toast'
+import { AppConfig } from '@/utils/AppConfig'
 
 type IMainProps = {
   meta: ReactNode;
@@ -11,7 +11,7 @@ type IMainProps = {
 const Main = (props: IMainProps) => (
   <div className="w-full px-1 text-gray-700 antialiased">
     {props.meta}
-
+    <Toaster/>
     <div className="mx-auto max-w-screen-md">
       <div className="border-b border-gray-300">
         <div className="pt-16 pb-8">
