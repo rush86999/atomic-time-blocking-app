@@ -50,7 +50,7 @@ const getListStyle2 = () => ({
   width: '100%',
 })
 
-type ItemType = {
+type TaskType = {
   id: number
   content: string
   startDate: string
@@ -137,10 +137,10 @@ MyDay.range = (date: Date, { localizer }: any) => {
 MyDay.navigate = (date: Date, action: any, { localizer }: any) => {
   switch (action) {
     case Navigate.PREVIOUS:
-      return date
+      return localizer.add(date, -1, 'day')
 
     case Navigate.NEXT:
-      return date
+      return localizer.add(date, 1, 'day')
 
     default:
       return date
@@ -151,7 +151,7 @@ MyDay.title = (date: Date) => `My awesome atomic day: ${date.toLocaleDateString(
 
 const DnDCalendar = withDragAndDrop(Calendar)
 
-function CustomView({ ...rest }) {
+function CustomView({ localizer, ...rest }: { [key: string]: any }) {
   const { defaultDate, views } = useMemo(
     () => ({
       defaultDate: new Date(),
@@ -169,6 +169,7 @@ function CustomView({ ...rest }) {
           defaultDate={defaultDate}
           defaultView={Views.DAY}
           views={views}
+          localizer={localizer}
           {...rest}
         />
   )
@@ -183,7 +184,7 @@ type DraggedItemType = { title: string, name: string }
 const Index = () => {
   const startTime = dayjs().minute() < 30 ? dayjs().minute(30).format() : dayjs().add(1, 'h').minute(0).format()
 
-  const [items, setItems] = useState<ItemType[]>([
+  const [tasks, setTasks] = useState<TaskType[]>([
     {
       id: 0,
       content: 'task 1',
@@ -221,9 +222,12 @@ const Index = () => {
   })
   const [selectedIndex, setSelectedIndex] = useState<number>(-1)
   const [isDeleteEvent, setIsDeleteEvent] = useState<boolean>(false)
+  const [isNewTask, setIsNewTask] = useState<boolean>(false)
+  const [newTask, setNewTask] = useState<TaskType | null>(null)
 
   const removeEvent = () => {
-    const newEvents = (events || []).slice(0, selectedIndex).concat((events || []).slice(index + 1))
+    // eslint-disable-next-line max-len
+    const newEvents = (events || []).slice(0, selectedIndex).concat((events || []).slice(selectedIndex + 1))
     setEvents(newEvents || [])
     setIsDeleteEvent(false)
     setSelectedIndex(-1)
@@ -276,11 +280,11 @@ const Index = () => {
 
   const disableRemoveEvent = () => setIsDeleteEvent(false)
 
-  const removeItem = (index: number) => {
-    const newItems = (items || []).slice(0, index).concat((items || [])?.slice(index + 1))
+  const removeTask = (index: number) => {
+    const newItems = (tasks || []).slice(0, index).concat((tasks || [])?.slice(index + 1))
 
-    const filteredEvents = events?.filter((e) => (e?.title !== items[index]?.content))
-    setItems(newItems)
+    const filteredEvents = events?.filter((e) => (e?.title !== tasks[index]?.content))
+    setTasks(newItems)
     setEvents(filteredEvents)
   }
 
@@ -302,8 +306,8 @@ const Index = () => {
       }
 
       setEvents((prev: any) => {
-        const existing = prev.find((ev) => ev.id === event.id) ?? {}
-        const filtered = prev.filter((ev) => ev.id !== event.id)
+        const existing = prev.find((ev: { id: number }) => ev.id === event.id) ?? {}
+        const filtered = prev.filter((ev: { id: number }) => ev.id !== event.id)
         return [...filtered, {
           ...existing, start, end, allDay
         }]
@@ -311,6 +315,43 @@ const Index = () => {
     },
     [setEvents]
   )
+
+  const addNewTask = () => {
+    const idList = tasks?.map((t) => t.id)
+    setNewTask({
+      id: Math.max(...idList) + 1,
+      content: 'New Task',
+      startDate: dayjs().format(),
+      endDate: dayjs().add(30, 'm').format(),
+      name: escapeUnsafe('New Task')
+    })
+    setIsNewTask(true)
+  }
+
+  const editTaskContent = (event: any) => {
+    if (newTask?.id) {
+      setNewTask({
+        ...newTask,
+        content: event.target.value,
+        name: escapeUnsafe(event.target.value)
+      })
+    } else {
+      toast.error('Something went wrong?!')
+    }
+  }
+
+  // const enableNewTask = () => setIsNewTask(false)
+
+  const disableNewTask = () => {
+    setIsNewTask(false)
+    setNewTask(null)
+  }
+
+  const saveNewTask = () => {
+    const newTasks = (tasks || []).concat([newTask as TaskType])
+    setTasks(newTasks)
+    disableNewTask()
+  }
 
   const newEvent = useCallback(
     (event: EventType) => {
@@ -370,8 +411,8 @@ const Index = () => {
       end: Date,
     }) => {
       setEvents((prev: any) => {
-        const existing = prev.find((ev) => ev.id === event.id) ?? {}
-        const filtered = prev.filter((ev) => ev.id !== event.id)
+        const existing = prev.find((ev: { id: number }) => ev.id === event.id) ?? {}
+        const filtered = prev.filter((ev: { id: number }) => ev.id !== event.id)
         return [...filtered, { ...existing, start, end }]
       })
     },
@@ -392,8 +433,6 @@ const Index = () => {
     [draggedEvent]
   )
 
-
-
   return (
     <Main
       meta={
@@ -403,105 +442,137 @@ const Index = () => {
         />
       }
     >
-      <h1 className="m-5 text-center text-xl font-bold sm:m-3">Time blocks</h1>
-      <div className="flex flex-row">
-        <div className="basis-1/3 flex-col ">
-          <div>
-          <h2 className="text-center">Tasks</h2>
-          </div>
-          <div className="">
-            <div className="">
-              <div style={getListStyle2()}>
-                {items.map((item, index) => (
-                  <div
-                    draggable="true"
-                    key={item?.id}
-                    onDragStart={() => handleDragStart(
-                      { title: rescapeUnsafe(item?.name), name: item?.name }
-                    )}
-                    style={getItemStyle2()}
-                    className="relative text-center"
-                  >
-                    {item.content}
-                    <div onClick={() => removeItem(index)} className="absolute top-0 right-2">x</div>
-                  </div>
-                ))}
-              </div>
+      <div className="">
+        <h1 className="m-5 text-center text-xl font-bold sm:m-3">Time blocks</h1>
+        <div className="relative m-3 flex w-full flex-row justify-end">
+          <button className=" mr-3 rounded-full bg-pink-700 px-4 py-2 text-white shadow hover:bg-pink-500 focus:outline-none" onClick={addNewTask}>
+            {'+ Add Task'}
+          </button>
+        </div>
 
-              </div>
+        <div className="flex flex-row">
+          <div className="basis-1/3 flex-col ">
+            <div>
+            <h2 className="text-center">Tasks</h2>
+            </div>
+            <div className="">
+              <div className="">
+                <div style={getListStyle2()} className="h-screen">
+                  {tasks.map((item, index) => (
+                    <div
+                      draggable="true"
+                      key={item?.id}
+                      onDragStart={() => handleDragStart(
+                        { title: item?.content, name: item?.name }
+                      )}
+                      style={getItemStyle2()}
+                      className="relative text-center"
+                    >
+                      {item.content}
+                      <div onClick={() => removeTask(index)} className="absolute top-0 right-2">x</div>
+                    </div>
+                  ))}
+                </div>
+
+                </div>
+            </div>
+          </div>
+          <div className="basis-2/3">
+            <h2 className="text-center">Today&apos;s Agenda</h2>
+            <div className="h-screen">
+              <CustomView
+                defaultDate={defaultDate}
+                localizer={mLocalizer}
+                events={events}
+                draggableAccessor={() => true}
+                resizable
+                selectable
+                views={Views.DAY}
+                step={5}
+                onDropFromOutside={onDropFromOutside}
+                onEventDrop={moveEvent}
+                onEventResize={resizeEvent}
+                onSelectSlot={newEvent}
+                onDragOver={customOnDragOver}
+                onSelectEvent={onSelectEvent}
+                scrollToTime={new Date()}
+              />
+            </div>
           </div>
         </div>
-        <div className="basis-2/3">
-          <h2 className="text-center">Today&apos;s Agenda</h2>
-          <div className="h-screen">
-            <CustomView
-              defaultDate={defaultDate}
-              localizer={mLocalizer}
-              events={events}
-              draggableAccessor={() => true}
-              resizable
-              selectable
-              views={Views.DAY}
-              step={5}
-              onDropFromOutside={onDropFromOutside}
-              onEventDrop={moveEvent}
-              onEventResize={resizeEvent}
-              onSelectSlot={newEvent}
-              onDragOver={customOnDragOver}
-              onSelectEvent={onSelectEvent}
-              scrollToTime={new Date()}
-            />
+        <ReactModal
+          isOpen={isEditEvent}
+          onRequestClose={disableEdit}
+          className=""
+        >
+          <div className=" flex h-full w-full flex-col items-center justify-center" >
+            <label className="block">
+              <span className="text-gray-700">Content</span>
+              <textarea
+                className="form-textarea mt-1 block w-full"
+                placeholder="event"
+                onChange={editEventContent}
+                value={selectedEvent.title}
+              />
+            </label>
+            <div className="flex flex-row items-center justify-center">
+              <button className="m-3 rounded-full border-black px-4 py-2 shadow hover:border-gray-700 focus:outline-none" onClick={disableEdit}>
+                  Cancel
+              </button>
+              <button className="m-3 rounded-full bg-pink-700 px-4 py-2 text-white shadow hover:bg-pink-500 focus:outline-none" onClick={updateEvent}>
+                  Save
+              </button>
+            </div>
           </div>
-        </div>
+          <div onClick={enableRemoveEvent} className="absolute bottom-2 right-2 text-gray-900 hover:text-gray-600">
+            <BsFillTrashFill />
+          </div>
+        </ReactModal>
+        <ReactModal
+          isOpen={isDeleteEvent}
+          onRequestClose={disableRemoveEvent}
+          className=""
+        >
+          <div className="flex h-full w-full flex-col items-center justify-center">
+            <h2 className="text-center text-base">
+              Do you want to delete event?
+            </h2>
+            <div className="flex flex-row items-center justify-center">
+              <button onClick={disableRemoveEvent} className="m-3 rounded-full border-black px-4 py-2 shadow hover:border-gray-700 focus:outline-none">
+                No
+              </button>
+              <button onClick={removeEvent} className="m-3 rounded-full bg-pink-700 px-4 py-2 text-white shadow hover:bg-pink-500 focus:outline-none">
+                Yes
+              </button>
+            </div>
+          </div>
+        </ReactModal>
+        <ReactModal
+          isOpen={isNewTask}
+          onRequestClose={disableNewTask}
+        >
+          <div className=" flex h-full w-full flex-col items-center justify-center" >
+             <label className="block">
+              <span className="text-gray-700">Content</span>
+              <textarea
+                className="form-textarea mt-1 block w-full"
+                placeholder="event"
+                onChange={editTaskContent}
+                value={newTask?.content}
+              />
+            </label>
+            <div className="flex flex-row items-center justify-center">
+              <button className="m-3 rounded-full border-black px-4 py-2 shadow hover:border-gray-700 focus:outline-none" onClick={disableNewTask}>
+                  Cancel
+              </button>
+              <button className="m-3 rounded-full bg-pink-700 px-4 py-2 text-white shadow hover:bg-pink-500 focus:outline-none" onClick={saveNewTask}>
+                  Save
+              </button>
+            </div>
+          </div>
+        </ReactModal>
+        <div id="modal" />
       </div>
-      <ReactModal
-        isOpen={isEditEvent}
-        onRequestClose={disableEdit}
-        className=""
-      >
-        <div className=" flex h-full w-full flex-col items-center justify-center" >
-          <label className="block">
-            <span className="text-gray-700">Content</span>
-            <textarea
-              className="form-textarea mt-1 block w-full"
-              placeholder="event"
-              onChange={editEventContent}
-              value={selectedEvent.title}
-            />
-          </label>
-          <div className="flex flex-row items-center justify-center">
-            <button className="m-3 rounded-full border-black px-4 py-2 shadow hover:border-gray-700 focus:outline-none" onClick={disableEdit}>
-                Cancel
-            </button>
-            <button className="m-3 rounded-full bg-pink-700 px-4 py-2 text-white shadow hover:bg-pink-500 focus:outline-none" onClick={updateEvent}>
-                Save
-            </button>
-          </div>
-        </div>
-        <div onClick={enableRemoveEvent} className="absolute bottom-2 right-2 text-gray-900 hover:text-gray-600">
-          <BsFillTrashFill />
-        </div>
-      </ReactModal>
-      <ReactModal
-        isOpen={isDeleteEvent}
-        onRequestClose={disableRemoveEvent}
-        className=""
-      >
-        <div className="flex h-full w-full flex-col items-center justify-center">
-          <h2 className="text-center text-base">
-            Do you want to delete event?
-          </h2>
-          <div className="flex flex-row items-center justify-center">
-            <button onClick={disableRemoveEvent} className="m-3 rounded-full border-black shadow hover:border-gray-700 focus:outline-none px-4 py-2">
-              No
-            </button>
-            <button onClick={removeEvent} className="m-3 rounded-full bg-pink-700 text-white shadow hover:bg-pink-500 focus:outline-none px-4 py-2">
-              Yes
-            </button>
-          </div>
-        </div>
-      </ReactModal>
-      <div id="modal" />
     </Main>
   )
 }

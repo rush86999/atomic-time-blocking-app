@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { Toaster } from 'react-hot-toast'
+
 import { AppConfig } from '@/utils/AppConfig'
 
 type IMainProps = {
