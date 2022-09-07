@@ -15,7 +15,7 @@ import {
   Calendar, DateLocalizer, momentLocalizer, Navigate, Views,
 } from 'react-big-calendar'
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
-import TimeGrid from 'react-big-calendar/lib/TimeGrid'
+// import TimeGrid from 'react-big-calendar/lib/TimeGrid'
 import toast from 'react-hot-toast'
 import { BsFillTrashFill } from 'react-icons/bs'
 import ReactModal from 'react-modal'
@@ -34,6 +34,8 @@ ReactModal.setAppElement('#modal')
 const mLocalizer = momentLocalizer(moment)
 
 const grid = 8
+
+const TimeGrid = require('react-big-calendar/lib/TimeGrid')
 
 const getItemStyle2 = () => ({
   // some basic styles to make the items look a bit nicer
