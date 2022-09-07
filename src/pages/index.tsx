@@ -8,7 +8,6 @@ import isBetween from 'dayjs/plugin/isBetween'
 import moment from 'moment'
 // eslint-disable-next-line import/no-extraneous-dependencies
 import PropTypes from 'prop-types'
-import { v4 as uuid } from 'uuid'
 import {
   useCallback, useEffect, useMemo, useState
 } from 'react'
@@ -20,6 +19,7 @@ import TimeGrid from 'react-big-calendar/lib/TimeGrid'
 import toast from 'react-hot-toast'
 import { BsFillTrashFill } from 'react-icons/bs'
 import ReactModal from 'react-modal'
+import { v4 as uuid } from 'uuid'
 
 import { Meta } from '@/layouts/Meta'
 import { Main } from '@/templates/Main'
@@ -344,13 +344,8 @@ const Index = () => {
   }
 
   const updateEvent = async () => {
-    const newEvents = events
-      .slice(0, selectedIndex)
-      .concat([selectedEvent])
-      .concat(events.slice(selectedIndex + 1))
+    
 
-    setEvents(newEvents)
-    disableEdit()
     let existingEvent: any = null
     try {
       const results = await db.find({
@@ -364,11 +359,18 @@ const Index = () => {
 
     if (!existingEvent || !(existingEvent?.id)) {
       try {
-        await db.put({ ...selectedEvent, _id: `${selectedEvent?.id}` } as EventType)
+        await db.put({ ...selectedEvent, _id: uuid() } as EventType)
       } catch (e) {
         console.log(e, ' unable to add new event')
       }
     }
+    const newEvents = events
+      .slice(0, selectedIndex)
+      .concat([selectedEvent])
+      .concat(events.slice(selectedIndex + 1))
+
+    setEvents(newEvents)
+    disableEdit()
   }
 
   const enableRemoveEvent = () => {
@@ -432,8 +434,8 @@ const Index = () => {
       }
 
       setEvents((prev: any) => {
-        const existing = prev.find((ev: { id: number }) => ev.id === event.id) ?? {}
-        const filtered = prev.filter((ev: { id: number }) => ev.id !== event.id)
+        const existing = prev.find((ev: { id: string }) => ev.id === event.id) ?? {}
+        const filtered = prev.filter((ev: { id: string }) => ev.id !== event.id)
         return [...filtered, {
           ...existing, start, end, allDay
         }]
@@ -461,7 +463,6 @@ const Index = () => {
   )
 
   const addNewTask = () => {
-    const idList = tasks?.map((t) => t.id)
     setNewTask({
       _id: uuid(),
       id: uuid(),
@@ -508,12 +509,16 @@ const Index = () => {
   const newEvent = useCallback(
     (event: EventType) => {
       let newEventObject = {}
+      let newSelectedIndex = 0
       setEvents((prev) => {
         const newId = uuid()
-        newEventObject = { ...event, id: newId, _id: newId }
-        return [...prev, { ...event, id: newId, _id: newId }]
+        newSelectedIndex = prev?.length || 0
+        newEventObject = { ...event, id: newId, _id: newId, }
+        return [...prev, newEventObject as EventType]
       })
-      onSelectEvent(newEventObject as EventType)
+      setSelectedIndex(newSelectedIndex)
+      setSelectedEvent(newEventObject as EventType)
+      setIsEditEvent(true)
     },
     [setEvents]
   )
@@ -563,15 +568,15 @@ const Index = () => {
       end: Date,
     }) => {
       setEvents((prev: any) => {
-        const existing = prev.find((ev: { id: number }) => ev.id === event.id) ?? {}
-        const filtered = prev.filter((ev: { id: number }) => ev.id !== event.id)
+        const existing = prev.find((ev: { id: string }) => ev.id === event.id) ?? {}
+        const filtered = prev.filter((ev: { id: string }) => ev.id !== event.id)
         return [...filtered, { ...existing, start, end }]
       })
 
       try {
         // await db.events.where('id').equals(event?.id).modify({ start, end })
         const results = await db.find({
-          selector: { id: { $eq: event?.id as number } }
+          selector: { id: { $eq: event?.id } }
         })
 
         if (results?.docs?.[0]) {
