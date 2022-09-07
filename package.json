@@ -19,13 +19,19 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^16.0.0",
+    "@types/pouchdb": "^6.4.0",
     "@types/react-big-calendar": "^0.38.1",
     "@types/react-modal": "^3.13.1",
     "dayjs": "^1.11.5",
+    "dexie": "^3.2.2",
+    "dexie-react-hooks": "^1.1.1",
+    "indexeddbshim": "^10.0.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "next": "^12.2.5",
     "next-seo": "^5.5.0",
+    "pouchdb": "^7.3.0",
+    "pouchdb-find": "^7.3.0",
     "react": "^18.2.0",
     "react-agenda": "^0.0.8",
     "react-beautiful-dnd": "^13.1.1",
@@ -37,6 +43,7 @@
     "react-schedule-calendar": "^0.22.8",
     "sass": "^1.54.8",
     "styled-components": "^5.3.5",
+    "uuid": "^9.0.0",
     "yarn": "^1.22.19"
   },
   "devDependencies": {

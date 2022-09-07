@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import './index.module.css'
 
@@ -7,8 +8,9 @@ import isBetween from 'dayjs/plugin/isBetween'
 import moment from 'moment'
 // eslint-disable-next-line import/no-extraneous-dependencies
 import PropTypes from 'prop-types'
+import { v4 as uuid } from 'uuid'
 import {
-  useCallback, useMemo, useState
+  useCallback, useEffect, useMemo, useState
 } from 'react'
 import {
   Calendar, DateLocalizer, momentLocalizer, Navigate, Views,
@@ -21,6 +23,8 @@ import ReactModal from 'react-modal'
 
 import { Meta } from '@/layouts/Meta'
 import { Main } from '@/templates/Main'
+import type { EventType, TaskType } from '@/utils/db';
+import { db } from '@/utils/db'
 
 dayjs.extend(isBetween)
 dayjs.extend(Duration)
@@ -49,23 +53,6 @@ const getListStyle2 = () => ({
   padding: grid,
   width: '100%',
 })
-
-type TaskType = {
-  id: number
-  content: string
-  startDate: string
-  endDate: string
-  name: string
-}
-
-type EventType = {
-  id: number,
-  title: string,
-  allDay: boolean,
-  start: Date,
-  end: Date,
-  isDraggable: boolean,
-}
 
 type MyWeekProps = {
   date: Date,
@@ -182,29 +169,38 @@ CustomView.propTypes = {
 type DraggedItemType = { title: string, name: string }
 
 const Index = () => {
+  // const localTasks = useLiveQuery(() => db?.tasks?.toArray())
+  // const localEvents = useLiveQuery(() => db?.events?.toArray())
+
   const startTime = dayjs().minute() < 30 ? dayjs().minute(30).format() : dayjs().add(1, 'h').minute(0).format()
 
   const [tasks, setTasks] = useState<TaskType[]>([
     {
-      id: 0,
+      _id: uuid(),
+      id: uuid(),
       content: 'task 1',
       startDate: dayjs(startTime).format(),
       endDate: dayjs(startTime).add(30, 'm').format(),
-      name: escapeUnsafe('task 1')
+      name: escapeUnsafe('task 1'),
+      type: 'task'
     },
     {
-      id: 1,
+      _id: uuid(),
+      id: uuid(),
       content: 'task 2',
       startDate: dayjs(startTime).add(30, 'm').format(),
       endDate: dayjs(startTime).add(1, 'h').format(),
-      name: escapeUnsafe('task 2')
+      name: escapeUnsafe('task 2'),
+      type: 'task',
     },
     {
-      id: 2,
+      _id: uuid(),
+      id: uuid(),
       content: 'task 3',
       startDate: dayjs(startTime).add(1, 'h').format(),
       endDate: dayjs(startTime).add(90, 'm').format(),
-      name: escapeUnsafe('task 3')
+      name: escapeUnsafe('task 3'),
+      type: 'task',
     },
   ])
 
@@ -218,19 +214,96 @@ const Index = () => {
   const [counters, setCounters] = useState(defaultCounter)
   const [isEditEvent, setIsEditEvent] = useState<boolean>(false)
   const [selectedEvent, setSelectedEvent] = useState<EventType>({
-    id: -1, title: 'placeholder', start: new Date(), end: new Date(), allDay: false, isDraggable: true
+    _id: uuid(),
+    id: uuid(),
+    title: 'placeholder',
+    start: new Date(),
+    end: new Date(),
+    allDay: false,
+    isDraggable: true,
+    type: 'event'
   })
   const [selectedIndex, setSelectedIndex] = useState<number>(-1)
   const [isDeleteEvent, setIsDeleteEvent] = useState<boolean>(false)
   const [isNewTask, setIsNewTask] = useState<boolean>(false)
   const [newTask, setNewTask] = useState<TaskType | null>(null)
 
-  const removeEvent = () => {
+  // create index if doesn't exist
+  useEffect(() => {
+    (async () => {
+      try {
+        await db.createIndex({
+          index: {
+            fields: ['id']
+          }
+        })
+
+        await db.createIndex({
+          index: {
+            fields: ['content']
+          }
+        })
+      } catch (e) {
+        console.log(e, ' unable to create index')
+      }
+    })()
+  }, [])
+
+  // get local events and tasks
+  useEffect(() => {
+    (async () => {
+      try {
+        const totalDocs = await db.allDocs<TaskType | EventType>({
+          include_docs: true,
+          attachments: true
+        })
+
+        console.log(totalDocs, ' these are totalDocs')
+
+        const { rows } = totalDocs
+        console.log(rows, ' these are rows')
+        const oldTasks = rows?.filter((r) => (r?.doc?.type === 'task'))
+        const oldEvents = rows?.filter((r) => (r?.doc?.type === 'event'))
+
+        console.log(oldTasks, ' these are oldTasks')
+        if (oldTasks?.length > 0) {
+          const oldTaskObjects = oldTasks?.map((t) => (t?.doc)) as TaskType[]
+          setTasks(oldTaskObjects || [])
+        }
+
+        if (oldEvents?.[0]?.doc?.id) {
+          // eslint-disable-next-line max-len
+          const oldEventObjects = oldEvents?.map((e) => ({
+            ...e?.doc,
+            start: new Date((e?.doc as EventType)?.start),
+            end: new Date((e?.doc as EventType)?.end)
+          }))
+          setEvents(oldEventObjects as EventType[] || [])
+        }
+      } catch (e) {
+        console.log(e, ' unable to get docs from pouchDb')
+      }
+    })()
+  }, [])
+
+  const removeEvent = async () => {
+    const oldEvents = events
     // eslint-disable-next-line max-len
     const newEvents = (events || []).slice(0, selectedIndex).concat((events || []).slice(selectedIndex + 1))
     setEvents(newEvents || [])
     setIsDeleteEvent(false)
     setSelectedIndex(-1)
+    try {
+      const results = await db.find({
+        selector: { id: { $eq: oldEvents?.[selectedIndex]?.id as string } }
+      })
+      console.log(results, ' results inside removeEvent')
+      if (results?.docs?.[0]) {
+        await db.remove(results?.docs?.[0])
+      }
+    } catch (e) {
+      console.log(e, ' unable to remove event')
+    }
   }
 
   const editEventContent = (event: any) => {
@@ -257,13 +330,20 @@ const Index = () => {
 
   const disableEdit = () => {
     setSelectedEvent({
-      id: -1, title: 'placeholder', start: new Date(), end: new Date(), allDay: false, isDraggable: true
+      _id: uuid(),
+      id: uuid(),
+      title: 'placeholder',
+      start: new Date(),
+      end: new Date(),
+      allDay: false,
+      isDraggable: true,
+      type: 'event'
     })
     setSelectedIndex(-1)
     setIsEditEvent(false)
   }
 
-  const updateEvent = () => {
+  const updateEvent = async () => {
     const newEvents = events
       .slice(0, selectedIndex)
       .concat([selectedEvent])
@@ -271,6 +351,24 @@ const Index = () => {
 
     setEvents(newEvents)
     disableEdit()
+    let existingEvent: any = null
+    try {
+      const results = await db.find({
+        selector: { id: { $eq: selectedEvent?.id as string } }
+      })
+      console.log(results, ' results inside updateEvent')
+      existingEvent = results?.docs?.[0]
+    } catch (e) {
+      console.log(e, ' unable to get event')
+    }
+
+    if (!existingEvent || !(existingEvent?.id)) {
+      try {
+        await db.put({ ...selectedEvent, _id: `${selectedEvent?.id}` } as EventType)
+      } catch (e) {
+        console.log(e, ' unable to add new event')
+      }
+    }
   }
 
   const enableRemoveEvent = () => {
@@ -280,12 +378,40 @@ const Index = () => {
 
   const disableRemoveEvent = () => setIsDeleteEvent(false)
 
-  const removeTask = (index: number) => {
+  const removeTask = async (index: number) => {
+    const removedTask = tasks[index]
+    // validate
+    // eslint-disable-next-line no-underscore-dangle
+    if (!removedTask || (removedTask && !(removedTask?._id))) {
+      toast.error('No task to remove?!')
+      return
+    }
     const newItems = (tasks || []).slice(0, index).concat((tasks || [])?.slice(index + 1))
 
     const filteredEvents = events?.filter((e) => (e?.title !== tasks[index]?.content))
+
     setTasks(newItems)
     setEvents(filteredEvents)
+    try {
+      const taskResults = await db.find({
+        selector: { id: { $eq: removedTask?.id as string } }
+      })
+      console.log(taskResults, ' taskResults inside removeTask')
+
+      const eventResults = await db.find({
+        selector: { content: { $eq: removedTask?.content } }
+      })
+      console.log(eventResults, ' eventResults insie removeTask')
+
+      if (taskResults?.docs?.[0]) {
+        await db.remove(taskResults?.docs?.[0])
+      }
+
+      const promises = eventResults?.docs?.map((e) => db.remove(e))
+      await Promise.all(promises)
+    } catch (e) {
+      console.log(e, ' unable to remove task')
+    }
   }
 
   // eslint-disable-next-line max-len
@@ -294,11 +420,11 @@ const Index = () => {
   // const dragFromOutsideItem = useCallback(() => draggedEvent, [draggedEvent])
 
   const moveEvent = useCallback(
-    ({
+    async ({
       event, start, end, isAllDay: droppedOnAllDaySlot = false
     } : {
       event: EventType, start: Date, end: Date, isAllDay: boolean
-    }): void => {
+    }): Promise<void> => {
       const { allDay } = event
       if (!allDay && droppedOnAllDaySlot) {
         // eslint-disable-next-line no-param-reassign
@@ -312,6 +438,24 @@ const Index = () => {
           ...existing, start, end, allDay
         }]
       })
+
+      try {
+        // await db.events.where('id').equals(event.id).modify({ start, end, allDay })
+        const eventResults = await db.find({
+          selector: { id: { $eq: event?.id as string } }
+        })
+        console.log(eventResults, ' eventResults inside moveEvent')
+        if (eventResults?.docs?.[0]) {
+          await db.put({
+            ...eventResults?.docs?.[0],
+            start,
+            end,
+            allDay
+          })
+        }
+      } catch (e) {
+        console.log(e, ' unable to move event inside db')
+      }
     },
     [setEvents]
   )
@@ -319,17 +463,19 @@ const Index = () => {
   const addNewTask = () => {
     const idList = tasks?.map((t) => t.id)
     setNewTask({
-      id: Math.max(...idList) + 1,
+      _id: uuid(),
+      id: uuid(),
       content: 'New Task',
       startDate: dayjs().format(),
       endDate: dayjs().add(30, 'm').format(),
-      name: escapeUnsafe('New Task')
+      name: escapeUnsafe('New Task'),
+      type: 'task'
     })
     setIsNewTask(true)
   }
 
   const editTaskContent = (event: any) => {
-    if (newTask?.id) {
+    if (newTask && (newTask?.id)) {
       setNewTask({
         ...newTask,
         content: event.target.value,
@@ -347,20 +493,25 @@ const Index = () => {
     setNewTask(null)
   }
 
-  const saveNewTask = () => {
+  const saveNewTask = async () => {
     const newTasks = (tasks || []).concat([newTask as TaskType])
     setTasks(newTasks)
     disableNewTask()
+    try {
+      // await db.tasks.add(newTask as TaskType)
+      await db.put({ ...newTask, _id: uuid() } as TaskType)
+    } catch (e) {
+      console.log(e, ' unable to save new task')
+    }
   }
 
   const newEvent = useCallback(
     (event: EventType) => {
       let newEventObject = {}
       setEvents((prev) => {
-        const idList = prev.map((item) => item.id)
-        const newId = Math.max(...idList) + 1
-        newEventObject = { ...event, id: newId }
-        return [...prev, { ...event, id: newId }]
+        const newId = uuid()
+        newEventObject = { ...event, id: newId, _id: newId }
+        return [...prev, { ...event, id: newId, _id: newId }]
       })
       onSelectEvent(newEventObject as EventType)
     },
@@ -375,9 +526,9 @@ const Index = () => {
       }
 
       const { name } = draggedEvent as DraggedItemType
-      const idList = events.map((item) => item.id)
-      const newId = Math.max(...idList) + 1
+      const newId = uuid()
       const event: EventType & { isAllDay: boolean } = {
+        _id: newId,
         id: newId,
         title: rescapeUnsafe(name),
         start,
@@ -385,6 +536,7 @@ const Index = () => {
         isAllDay,
         allDay: isAllDay,
         isDraggable: true,
+        type: 'event'
       }
       setDraggedEvent(null)
       setCounters((prev: any) => {
@@ -405,7 +557,7 @@ const Index = () => {
   )
 
   const resizeEvent = useCallback(
-    ({ event, start, end } : {
+    async ({ event, start, end } : {
       event: EventType,
       start: Date,
       end: Date,
@@ -415,6 +567,23 @@ const Index = () => {
         const filtered = prev.filter((ev: { id: number }) => ev.id !== event.id)
         return [...filtered, { ...existing, start, end }]
       })
+
+      try {
+        // await db.events.where('id').equals(event?.id).modify({ start, end })
+        const results = await db.find({
+          selector: { id: { $eq: event?.id as number } }
+        })
+
+        if (results?.docs?.[0]) {
+          await db.put({
+            ...results?.docs?.[0],
+            start,
+            end,
+          })
+        }
+      } catch (e) {
+        console.log(e, ' unable to modify event inside resizeEvent')
+      }
     },
     [setEvents]
   )
@@ -432,6 +601,10 @@ const Index = () => {
     },
     [draggedEvent]
   )
+
+  console.log(tasks, ' tasks')
+  console.log(events, ' events')
+  console.log(newTask, ' newTask')
 
   return (
     <Main
