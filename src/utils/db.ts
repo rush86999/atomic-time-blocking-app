@@ -29,4 +29,3 @@ export interface EventType {
 }
 
 export const db = new PouchDB('atomic')
-
