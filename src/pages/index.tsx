@@ -37,19 +37,6 @@ const grid = 8
 
 const TimeGrid = require('react-big-calendar/lib/TimeGrid')
 
-const getItemStyle2 = () => ({
-  // some basic styles to make the items look a bit nicer
-  MozUserSelect: 'none',
-  WebkitUserSelect: 'none',
-  msUserSelect: 'none',
-
-  padding: grid * 2,
-  margin: `0 0 ${grid}px 0`,
-
-  // change background colour if dragging
-  background: 'lightpink',
-})
-
 const getListStyle2 = () => ({
   background: '#F3F1F5',
   padding: grid,
@@ -346,8 +333,6 @@ const Index = () => {
   }
 
   const updateEvent = async () => {
-    
-
     let existingEvent: any = null
     try {
       const results = await db.find({
@@ -645,7 +630,18 @@ const Index = () => {
                       onDragStart={() => handleDragStart(
                         { title: item?.content, name: item?.name }
                       )}
-                      style={getItemStyle2()}
+                      style={{
+                        // some basic styles to make the items look a bit nicer
+                        MozUserSelect: 'none',
+                        WebkitUserSelect: 'none',
+                        msUserSelect: 'none',
+
+                        padding: grid * 2,
+                        margin: `0 0 ${grid}px 0`,
+
+                        // change background colour if dragging
+                        background: 'lightpink',
+                      }}
                       className="relative text-center"
                     >
                       {item.content}
